@@ -25,6 +25,42 @@ object as a field called ```user``` so that it may be used by the request downst
 
 **Access Control**
 
+Once we have authenticated users, we can then use access control lists (ACLs) to control what operations users can perform. 
+
+The ```hello``` endpoint defines an ACL that defines different permissions for users based on their *role*. 
+
+```node
+o({
+  _type: carbon.carbond.security.EndpointAcl,
+
+  groupDefinitions: {
+    role: 'role',
+  },
+
+  entries: [
+    { // Grant those in Admin role permission to all operations
+      user: { role: 'Admin' },
+      permissions: {
+        '*': true
+      }
+    },
+    { // Grant those in Reader role get permissions
+      user: { role: 'Reader' },
+      permissions: {
+        get: true,
+        '*': false // Everything else false. This rule is implicit if not present.
+      }
+    },
+    { // Grant those in Writer role both get and put permissions
+      user: { role: 'Writer' },
+      permissions: {
+        get: true,
+        put: true
+      }
+    },
+  ]
+})
+```
 
 ## Installing the service
 
