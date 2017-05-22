@@ -6,6 +6,7 @@ The code defining the service is located in ```lib/HelloService.js``` and uses a
 to implement an HTTP ```GET``` at the path ```/hello```. 
 
 **Authentication**
+
 This service has an ```Authenticator``` defined that authenticates users based on an API key stored in MongoDB.
 
 ```node
