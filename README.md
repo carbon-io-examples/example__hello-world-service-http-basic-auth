@@ -1,11 +1,29 @@
 # Hello Service (Authentication and access control)
 
-This example is a more elaborate version of [our original hello-world example](https://github.com/carbon-io/example__hello-world-service)
-that illustrates how you implement authentication and access control (AAC) in carbon.io apps. 
+In this example we introduce the central ideas of authentication and access control. 
 
-The code defining the service is located in ```lib/HelloService.js```
-and uses a simple ```Endpoint``` object to implement an HTTP ```GET```
-at the path ```/hello```. 
+The code defining the service is located in ```lib/HelloService.js``` and uses a simple ```Endpoint``` object 
+to implement an HTTP ```GET``` at the path ```/hello```. 
+
+**Authentication**
+This service has an ```Authenticator``` defined that authenticates users based on an API key stored in MongoDB.
+
+```node
+o({
+  _type: carbon.carbond.security.MongoDBApiKeyAuthenticator,
+  apiKeyParameterName: "ApiKey",
+  apiKeyLocation: "header", // can be one of 'header' or 'query'
+  userCollection: "users",
+  apiKeyField: "apiKey"
+})
+```
+
+This authenticator ensures that an API key is presented for each request to the service and that the 
+supplied API key matches a user in the system. The authenticated user is then attached to the ```request``` 
+object as a field called ```user``` so that it may be used by the request downstream. 
+
+**Access Control**
+
 
 ## Installing the service
 
