@@ -73,7 +73,7 @@ __(function() {
           method: "GET",
         },
         resSpec: {
-          statusCode: 403 // XXX 401?
+          statusCode: 403 // Should be 401
         }
       },
       
