@@ -97,6 +97,23 @@ For cmdline help:
 % node lib/HelloService -h
 ```
 
+## Accessing the service
+
+You can interact with the service via HTTP. To test authentication and access control, you'll need to first create a new user in your MongoDB database. Here is an example using Terminal/mongo:
+
+```
+% mongo
+% use hello-world
+% db.users.insert({"name":"chris","apiKey":"test-api-key","role":"Admin"})
+```
+
+Once you have a user, you can test using curl:
+
+```
+% curl localhost:8888/hello -H "ApiKey: test-api-key"
+```
+
+
 ## Running the unit tests
 
 This example comes with a simple unit test written in Carbon.io's test framework called TestTube. It is located in the ```test``` directory. 
