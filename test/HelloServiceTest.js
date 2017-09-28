@@ -1,34 +1,7 @@
-var carbon = require('carbon-io')
-var __     = carbon.fibers.__(module)
-var _o     = carbon.bond._o(module)
-var o      = carbon.atom.o(module).main // Note the .main here since this is the main (test) application
-
-/***************************************************************************************************
- * SEED_USERS
- */
-var SEED_USERS = [
-  {
-    firstName: "Bob",
-    lastName: "Jones",
-    email: "bob@jones.com",
-    apiKey: "1234",
-    role: "Admin"
-  },
-  {
-    firstName: "Mary",
-    lastName: "Smith",
-    email: "mary@smith.com",
-    apiKey: "5678",
-    role: "Reader"
-  },
-  {
-    firstName: "Charlie",
-    lastName: "Fox",
-    email: "charlie@fox.com",
-    apiKey: "3456",
-    role: "Writer"
-  },
-]
+const carbon = require('carbon-io')
+const __ = carbon.fibers.__(module)
+const _o = carbon.bond._o(module)
+const o = carbon.atom.o(module).main // Note the .main here since this is the main (test) application
 
 /***************************************************************************************************
  * HelloServiceTest
@@ -56,18 +29,142 @@ __(function() {
      */
     setup: function() {
       carbon.carbond.test.ServiceTest.prototype.setup.call(this)
-      
-      // Seed some users
       this.service.db.command({dropDatabase: 1})
-      this.service.db.getCollection("users").insert(SEED_USERS)
     },
+    
+    /***************************************************************************
+     * suppressServiceLogging
+     */
+    suppressServiceLogging: false,
 
     /***************************************************************************
      * tests
      */
-    tests: [
-      // Test GET with no ApiKey
+    tests: [  
+      // Test POST user
       {
+        name: 'POST /users bob@jones.com',
+        description: 'should return 201',
+        reqSpec: {
+          url: '/users',
+          method: 'POST',
+          body: {
+            email: 'bob@jones.com',
+            password: '1234'
+          }
+        },
+        resSpec: {
+          statusCode: 201
+        }
+      },
+      
+      // Test POST user
+      {
+        name: 'POST /users alice@smith.com',
+        reqSpec: {
+          url: '/users',
+          method: 'POST',
+          body: {
+            email: 'alice@smith.com',
+            password: '5678'
+          }
+        },
+        resSpec: {
+          statusCode: 201
+        }
+      },
+      
+      // Test POST user with same email
+      {
+        description: 'should return 409',
+        reqSpec: {
+          url: '/users',
+          method: "POST",
+          body: {
+            email: 'bob@jones.com',
+            password: '1234',
+          }
+        },
+        resSpec: {
+          statusCode: 409
+        }
+      },
+      
+      // Test GET user with correct credentials
+      {
+        name: 'GET /users/:_id',
+        reqSpec: function(context) { // We need the previous response to get the _id
+          return {
+            url: context.httpHistory.getRes('POST /users bob@jones.com').headers.location,
+            method: 'GET',
+            headers: {
+              Authorization: authorizationHeader('bob@jones.com', '1234'),
+            }
+          }
+        },
+        resSpec: {
+          statusCode: 200
+        }
+      },
+      
+      // Test GET user with wrong credentials
+      {
+        name: 'GET /users/:_id',
+        description: 'Should return 403',
+        reqSpec: function(context) { // We need the previous response to get the _id
+          return {
+            url: context.httpHistory.getRes('POST /users bob@jones.com').headers.location,
+            method: 'GET',
+            headers: {
+              Authorization: authorizationHeader('alice@smith.com', '5678'),
+            }
+          }
+        },
+        resSpec: {
+          statusCode: 403
+        }
+      },
+      
+      // Test PATCH user
+      {
+        name: 'PATCH /users/:_id',
+        reqSpec: function(context) { // We need the previous response to get the _id
+          return {
+            url: context.httpHistory.getRes('POST /users bob@jones.com').headers.location,
+            method: 'PATCH',
+            body: {
+              password: 'abcd'
+            },
+            headers: {
+              Authorization: authorizationHeader('bob@jones.com', '1234'),
+            }
+          }
+        },
+        resSpec: {
+          statusCode: 200
+        }
+      },
+      
+      // Test DELETE user
+      {
+        name: 'DELETE /users/:_id',
+        reqSpec: function(context) { // We need the previous response to get the _id
+          return {
+            url: context.httpHistory.getRes('POST /users bob@jones.com').headers.location,
+            method: 'DELETE',
+            headers: {
+              Authorization: authorizationHeader('bob@jones.com', 'abcd'),
+            }
+          }
+        },
+        resSpec: {
+          statusCode: 200
+        }
+      },
+      
+      // Test GET with no authentication
+      {
+        description: 'Should return 403',
         reqSpec: {
           url: '/hello',
           method: "GET",
@@ -77,96 +174,28 @@ __(function() {
         }
       },
       
-      // Test GET with Admin user
+      // Test GET with user
       {
         reqSpec: {
           url: '/hello',
           method: "GET",
           headers: {
-            ApiKey: SEED_USERS[0].apiKey
+            Authorization: authorizationHeader('alice@smith.com', '5678')
           }
         },
         resSpec: {
           statusCode: 200,
           body: { msg: "Hello world!" }
         }
-      },
-
-      // Test PUT with Admin user
-      {
-        reqSpec: {
-          url: '/hello',
-          method: "PUT",
-          headers: {
-            ApiKey: SEED_USERS[0].apiKey
-          },
-          body: { msg: "Hello there!" }
-        },
-        resSpec: {
-          statusCode: 204,
-        }
-      },
-
-      // Test GET with Reader
-      {
-        reqSpec: {
-          url: '/hello',
-          method: "GET",
-          headers: {
-            ApiKey: SEED_USERS[1].apiKey
-          }
-        },
-        resSpec: {
-          statusCode: 200,
-          body: { msg: "Hello there!" }
-        }
-      },
-
-      // Test PUT with Reader
-      {
-        reqSpec: {
-          url: '/hello',
-          method: "PUT",
-          headers: {
-            ApiKey: SEED_USERS[1].apiKey
-          },
-          body: { msg: "Hello hello!" }
-        },
-        resSpec: {
-          statusCode: 403 // Reader cannot write so should get Forbidden 
-        }
-      },
-
-      // Test PUT with Writer
-      {
-        reqSpec: {
-          url: '/hello',
-          method: "PUT",
-          headers: {
-            ApiKey: SEED_USERS[2].apiKey
-          },
-          body: { msg: "Hello hello!" }
-        },
-        resSpec: {
-          statusCode: 204
-        }
-      },
-
-      // Test GET with Writer
-      {
-        reqSpec: {
-          url: '/hello',
-          method: "GET",
-          headers: {
-            ApiKey: SEED_USERS[2].apiKey
-          }
-        },
-        resSpec: {
-          statusCode: 200,
-          body: { msg: "Hello hello!" }
-        }
-      },
+      }
     ]
-
   })
 })
+
+/***************************************************************************************************
+ * authorizationHeader()
+ */
+function authorizationHeader(username, password) {
+  var s = new Buffer(`${username}:${password}`).toString('base64')
+  return `Basic ${s}`
+}

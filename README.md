@@ -1,86 +1,68 @@
-# Hello Service (Authentication and access control)
+# Hello Service (HTTP Basic Authentication)
 
-In this example we introduce the central ideas of authentication and access control. 
+In this example we show usage of HTTP Basic Authentication using the `MongoDBHttpBasicAuthenticator` class.
 
-The code defining the service is located in ```lib/HelloService.js``` and uses a simple ```Endpoint``` object 
-to implement an HTTP ```GET``` at the path ```/hello```. 
+The code defining the service is located in `lib/HelloService.js` and uses a simple `Endpoint` object
+to implement an HTTP `GET` at the path `/hello`.
 
 **Authentication**
 
-This service has an ```Authenticator``` defined that authenticates users based on an API key stored in MongoDB.
+This service has an `authenticator` defined that authenticates users based on a username and password stored in MongoDB.
 
-```node
+```js
 o({
-  _type: carbon.carbond.security.MongoDBApiKeyAuthenticator,
-  apiKeyParameterName: "ApiKey",
-  apiKeyLocation: "header", // can be one of 'header' or 'query'
+  _type: carbon.carbond.security.MongoDBHttpBasicAuthenticator,
+  passwordHashFn: carbon.carbond.security.BcryptHasher,
   userCollection: "users",
-  apiKeyField: "apiKey"
+  usernameField: "email",
+  passwordField: "password"
 })
 ```
 
-This authenticator ensures that an API key is presented for each request to the service and that the 
-supplied API key matches a user in the system. The authenticated user is then attached to the ```request``` 
-object as a field called ```user``` so that it may be used by the request downstream. 
+This authenticator ensures that an API key is presented for each request to the service and that the
+supplied API key matches a user in the system. The authenticated user is then attached to the `request`
+object as a field called `user` so that it may be used by the request downstream.
 
 **Access Control**
 
-Once we have authenticated users, we can then use access control lists (ACLs) to control what operations users can perform. 
+Once we have authenticated users, we can then use access control lists (ACLs) to control what operations users can perform.
 
-The ```hello``` endpoint defines an ACL that defines different permissions for users based on their *role*. 
+The `hello` endpoint defines an ACL that lets any user access it as long as they are authenticated.
 
-```node
+```js
 o({
   _type: carbon.carbond.security.EndpointAcl,
 
-  groupDefinitions: {
-    role: 'role',
-  },
-
   entries: [
-    { // Grant those in Admin role permission to all operations
-      user: { role: 'Admin' },
+    {
+      // All users
+      user: '*',
       permissions: {
         '*': true
       }
-    },
-    { // Grant those in Reader role get permissions
-      user: { role: 'Reader' },
-      permissions: {
-        get: true,
-        '*': false // Everything else false. This rule is implicit if not present.
-      }
-    },
-    { // Grant those in Writer role both get and put permissions
-      user: { role: 'Writer' },
-      permissions: {
-        get: true,
-        put: true
-      }
-    },
+    }
   ]
 })
 ```
 
 ## Installing the service
 
-We encourage you to clone the git repository so you can play around
-with the code. 
+We encourage you to clone the git repository so you can play around with the code.
 
 ```
-% git clone git@github.com:carbon-io/example__hello-world-service-aac.git
-% cd example__hello-world-service-aac
-% npm install
+$ git clone git@github.com:carbon-io-guides/example__hello-world-service-http-basic-auth.git
+$ cd example__hello-world-service-http-basic-auth
+$ npm install
 ```
 
 ## Setting up your environment
 
-This example expects a running MongoDB database. The code will honor a ```MONGODB_URI``` environment variable. The default URI is
-```mongodb://localhost:27017/contacts```.
+This example expects a running MongoDB database. The code will honor a `MONGODB_URI` environment variable. The default URI is `mongodb://localhost:27017/hello-world`.
 
 To set the environment variable to point the app at a database different from the default (on Mac):
+
 ```
-export MONGODB_URI=mongodb://localhost:27017/mydb
+$ export MONGODB_URI=mongodb://localhost:27017/mydb
 ```
 
 ## Running the service
@@ -88,51 +70,49 @@ export MONGODB_URI=mongodb://localhost:27017/mydb
 To run the service:
 
 ```sh
-% node lib/HelloService
+$ node lib/HelloService
 ```
 
 For cmdline help:
 
 ```sh
-% node lib/HelloService -h
+$ node lib/HelloService -h
 ```
 
 ## Accessing the service
 
-You can interact with the service via HTTP. To test authentication and access control, you'll need to first create a new user in your MongoDB database. Here is an example using Terminal/mongo:
+You can interact with the service via HTTP. To test authentication and access control, you'll need to first POST a new user to the service. Here is an example using curl:
 
 ```
-% mongo
-% use hello-world
-% db.users.insert({"name":"chris","apiKey":"test-api-key","role":"Admin"})
+$ curl localhost:8888/users -H "Content-Type: application/json" -d '{"email": "foo@bar.com", "password": "baz"}'
 ```
 
-Once you have a user, you can test using curl:
+Once you have a user, you can test using:
 
 ```
-% curl localhost:8888/hello -H "ApiKey: test-api-key"
+$ curl -u foo@bar.com:baz localhost:8888/hello
 ```
 
 
 ## Running the unit tests
 
-This example comes with a simple unit test written in Carbon.io's test framework called TestTube. It is located in the ```test``` directory. 
+This example comes with a simple unit test written in Carbon.io's test framework called TestTube. It is located in the `test` directory.
 
 ```
-% node test/HelloServiceTest
+$ node test/HelloServiceTest
 ```
 
-or 
+or
 
 ```
-% npm test
+$ npm test
 ```
 
 ## Generating API documentation (aglio flavor)
 
 ```sh
-% node lib/HelloService gen-static-docs --flavor aglio --out docs/index.html
+$ node lib/HelloService gen-static-docs --flavor aglio --out docs/index.html
 ```
 
 * [View current documentation](
-http://htmlpreview.github.io/?https://raw.githubusercontent.com/carbon-io/example__hello-world-service-aac/master/docs/index.html)
+http://htmlpreview.github.io/?https://raw.githubusercontent.com/carbon-io-guides/example__hello-world-service-http-basic-auth/master/docs/index.html)
