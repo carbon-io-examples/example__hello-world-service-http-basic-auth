@@ -1,3 +1,5 @@
+const assert = require('assert')
+
 const carbon = require('carbon-io')
 const __ = carbon.fibers.__(module)
 const _o = carbon.bond._o(module)
@@ -31,7 +33,15 @@ __(function() {
       carbon.carbond.test.ServiceTest.prototype.setup.call(this)
       this.service.db.command({dropDatabase: 1})
     },
-    
+
+    /***************************************************************************
+     * teardown
+     */
+    teardown: function() {
+      this.service.db.command({dropDatabase: 1})
+      carbon.carbond.test.ServiceTest.prototype.teardown.call(this)
+    },
+
     /***************************************************************************
      * suppressServiceLogging
      */
@@ -40,7 +50,7 @@ __(function() {
     /***************************************************************************
      * tests
      */
-    tests: [  
+    tests: [
       // Test POST user
       {
         name: 'POST /users bob@jones.com',
@@ -54,10 +64,13 @@ __(function() {
           }
         },
         resSpec: {
-          statusCode: 201
+          statusCode: 201,
+          body: function(body) {
+            assert(body.email === 'bob@jones.com')
+          }
         }
       },
-      
+
       // Test POST user
       {
         name: 'POST /users alice@smith.com',
@@ -70,10 +83,13 @@ __(function() {
           }
         },
         resSpec: {
-          statusCode: 201
+          statusCode: 201,
+          body: function(body) {
+            assert(body.email === 'alice@smith.com')
+          }
         }
       },
-      
+
       // Test POST user with same email
       {
         description: 'should return 409',
@@ -86,10 +102,15 @@ __(function() {
           }
         },
         resSpec: {
-          statusCode: 409
+          statusCode: 409,
+          body: {
+            code: 409,
+            description: 'Conflict',
+            message: 'User exists with this email'
+          }
         }
       },
-      
+
       // Test GET user with correct credentials
       {
         name: 'GET /users/:_id',
@@ -103,10 +124,13 @@ __(function() {
           }
         },
         resSpec: {
-          statusCode: 200
+          statusCode: 200,
+          body: function(body, context) {
+            assert.deepEqual(body, context.httpHistory.getRes('POST /users bob@jones.com').body)
+          }
         }
       },
-      
+
       // Test GET user with wrong credentials
       {
         name: 'GET /users/:_id',
@@ -121,10 +145,15 @@ __(function() {
           }
         },
         resSpec: {
-          statusCode: 403
+          statusCode: 403,
+          body: {
+            code: 403,
+            description: 'Forbidden',
+            message: 'User does not have permission to perform operation'
+          }
         }
       },
-      
+
       // Test PATCH user
       {
         name: 'PATCH /users/:_id',
@@ -141,10 +170,11 @@ __(function() {
           }
         },
         resSpec: {
-          statusCode: 200
+          statusCode: 200,
+          body: { n: 1 }
         }
       },
-      
+
       // Test DELETE user
       {
         name: 'DELETE /users/:_id',
@@ -158,10 +188,11 @@ __(function() {
           }
         },
         resSpec: {
-          statusCode: 200
+          statusCode: 200,
+          body: { n: 1 }
         }
       },
-      
+
       // Test GET with no authentication
       {
         description: 'Should return 403',
@@ -170,10 +201,15 @@ __(function() {
           method: "GET",
         },
         resSpec: {
-          statusCode: 403 // Should be 401
+          statusCode: 403, // Should be 401
+          body: {
+            code: 403,
+            description: 'Forbidden',
+            message: 'User does not have permission to perform operation'
+          }
         }
       },
-      
+
       // Test GET with user
       {
         reqSpec: {
