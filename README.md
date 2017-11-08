@@ -1,6 +1,8 @@
 # Hello Service (HTTP Basic Authentication)
 
-[![Build Status](https://img.shields.io/travis/carbon-io-examples/example__hello-world-service-http-basic-auth.svg?style=flat-square)](https://travis-ci.org/carbon-io-examples/example__hello-world-service-http-basic-auth) ![Carbon Version](https://img.shields.io/badge/carbon--io-0.7-blue.svg?style=flat-square)
+shield-badge
+
+[![Build Status](https://img.shields.io/travis/carbon-io-examples/master/example__hello-world-service-http-basic-auth.svg?style=flat-square)](https://travis-ci.org/carbon-io-examples/example__hello-world-service-http-basic-auth) ![Carbon Version](https://img.shields.io/badge/carbon--io-0.7-blue.svg?style=flat-square)
 
 In this example we show usage of HTTP Basic Authentication using the `MongoDBHttpBasicAuthenticator` class.
 
