@@ -1,5 +1,7 @@
 # Hello Service (HTTP Basic Authentication)
 
+[![Build Status](https://img.shields.io/travis/carbon-io-examples/example__hello-world-service-http-basic-auth/carbon-0.7.svg?style=flat-square)](https://travis-ci.org/carbon-io-examples/example__hello-world-service-http-basic-auth)
+
 In this example we show usage of HTTP Basic Authentication using the `MongoDBHttpBasicAuthenticator` class.
 
 The code defining the service is located in `lib/HelloService.js` and uses a simple `Endpoint` object
